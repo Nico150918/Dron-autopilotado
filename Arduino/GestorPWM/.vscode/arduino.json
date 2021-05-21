@@ -1,0 +1,4 @@
+{
+    "sketch": "GestorPWM.ino",
+    "board": "arduino:avr:micro"
+}
