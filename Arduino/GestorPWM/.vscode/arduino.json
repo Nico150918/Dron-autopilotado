@@ -1,5 +1,5 @@
 {
     "sketch": "GestorPWM.ino",
     "board": "arduino:avr:micro",
-    "port": "COM10"
+    "port": "COM3"
 }

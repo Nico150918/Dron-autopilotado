@@ -1,26 +1,34 @@
 #include <Servo.h>
 #include <pins_arduino.h>
 
-byte sendedCont = 0;
-volatile boolean intervalEnded;
-//valores de configuración
-const int VAL_MIN_PWM = 35;                                     //este es el valor mas bajo que puede leer mi controlador de vuelo
-const int VAL_MAX_PWM = 150;                                    //este es el valor mas alto que puede leer mi controlador de vuelo
-const int NUM_CHANNELS = 8;                                     //numero de canales que utilizas.
-int DEFAULT_VALUES[NUM_CHANNELS] = {50, 50, 50, 0, 0, 0, 0, 0}; //Los porcentajes de potencia en los que quieres que se inicie el programa, añade los que falten y modifica para que se ajusten a tus necesidades
-int CONTROLED_DESCENT_VALUES[NUM_CHANNELS] = {50, 50, 50, 20, 0, 0, 0, 0};
-int ALT_DESCENT_VALUES[NUM_CHANNELS] = {50, 50, 50, 0, 0, 0, 0, 0};
 
-
-const byte ENDVAL = 0b11111111;               //Si queremos solo modificar solo los primeros canales podemos acortar la información a trasmitir
-const byte ERROR_CODE = 0b11111110;            //Si se envia un valor mal reinicia el envio de la secuencia
-const byte EMERGENCY_DESCENT = 0b11111101;     //En caso de error,un decenso controlado
-const byte EMERGENCY_ALT_DESCENT = 0b11111100; //En caso de error, apaga los motores y deja caer el dron
+//Valores configurables
+const int VAL_MIN_PWM = 35; //este es el valor mas bajo que puede leer mi controlador de vuelo
+const int VAL_MAX_PWM = 150;//este es el valor mas alto que puede leer mi controlador de vuelo
+const int NUM_CHANNELS = 8; //numero de canales que utilizas.
+int DEFAULT_VALUES[NUM_CHANNELS] = {50, 50, 50, 0, 0, 0, 0, 0};             //Los porcentajes de potencia en los que quieres que se inicie el programa, añade los que falten y modifica para que se ajusten a tus necesidades
+int CONTROLED_DESCENT_VALUES[NUM_CHANNELS] = {50, 50, 50, 20, 0, 0, 0, 0};  //Los porcentajes de potencia en los que quieres que se descienda en caso de parada de emergencia
+int ALT_DESCENT_VALUES[NUM_CHANNELS] = {50, 50, 50, 0, 0, 0, 0, 0};         //parada 100 total para emergencias
 
 Servo roll, pitch, yaw, acel, aux1, aux2, aux3, aux4;                          //definimos los servos, en caso de que tu dron utilize mas de 8 añade aqui los canales que falten
 Servo servos[NUM_CHANNELS] = {roll, pitch, yaw, acel, aux1, aux2, aux3, aux4}; //lista de servos, para facilitar la ampliación, en caso de que tu dron utilize mas de 8 añade aqui los canales que falten
 int pins[NUM_CHANNELS] = {A0, A1, A3, A2, A4, A5, 9, 10};                      //Pines a los que va conectado cada puerto, ajustar a el diseño de cada dron correspondiente
 int updateValues[NUM_CHANNELS];
+
+
+///No modificar
+
+byte sendedCont = 0;
+volatile boolean intervalEnded;
+bool lastError = false; 
+
+const byte ENDVAL = 0b11111111;                //Si queremos solo modificar solo los primeros canales podemos acortar la información a trasmitir
+const byte ERROR_CODE = 0b11111110;            //Si se envia un valor mal reinicia el envio de la secuencia
+const byte EMERGENCY_DESCENT = 0b11111101;     //En caso de error,un decenso controlado
+const byte EMERGENCY_ALT_DESCENT = 0b11111100; //En caso de error, apaga los motores y deja caer el dron
+
+
+
 
 /*
  * Roll = inclinación lateral -> A0
@@ -58,7 +66,7 @@ void loop()
     {
         arrayAcciones acciones = process();
         Serial.println(acciones.ultimaPos);
-        for (int i = 0; i < NUM_CHANNELS-1; i++)
+        for (int i = 0; i < NUM_CHANNELS; i++)
         {
             servos[i].write(mapper(acciones.arr[i]));
             Serial.print(acciones.arr[i]);Serial.print(" = ");Serial.println(mapper(acciones.arr[i]));
@@ -102,24 +110,12 @@ arrayAcciones process()
 ISR(SPI_STC_vect)
 {
     byte input = SPDR;
-    bool lastError;
-    if (lastError){
-        lastError = false;
-    }
-    else if (sendedCont < NUM_CHANNELS - 1)
+
+    if (sendedCont == NUM_CHANNELS - 1)
     {
-        lastError = manageSPIInput(input);
-    }
-    else if (sendedCont == NUM_CHANNELS - 1)
-    {
-        intervalEnded = true;
-        updateValues[sendedCont] = input;
-    }
-    else
-    {
-        //TODO
-        //Falta por gestionar el error
-    }
+        intervalEnded = true;        
+    } 
+    lastError = manageSPIInput(input); 
 }
 
 boolean manageSPIInput(byte input)
@@ -130,9 +126,6 @@ boolean manageSPIInput(byte input)
     {
     case ERROR_CODE:
         Serial.println("Error code");
-        for (int i = 0; i < NUM_CHANNELS; i++){            
-            updateValues[i] = DEFAULT_VALUES[i];
-        }
         sendedCont = 0;        
         ret = true;
         break;
@@ -159,7 +152,7 @@ boolean manageSPIInput(byte input)
 
     case ENDVAL:
         intervalEnded = true;
-        for (size_t i = sendedCont; i < NUM_CHANNELS; i++)
+        for (size_t i = sendedCont-1; i < NUM_CHANNELS; i++)
         {
             updateValues[sendedCont] = 0;
         }
