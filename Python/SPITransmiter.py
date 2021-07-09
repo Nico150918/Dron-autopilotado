@@ -4,12 +4,12 @@ import time
 from configVariables import ENDVAL,ERROR_CODE,EMERGENCY_DESCENT,EMERGENCY_ALT_DESCENT
 
 class SPITransmiter:
-    def __init__(self, module = 0, disp = 0, maxHz = 1000):
+    def __init__(self, module = 0, disp = 0, maxHz = 1000000):
         GPIO.setmode(GPIO.BCM)
 
         self.spi = spidev.SpiDev()
-        self.spi.open(0, 0)  # Abrimos el puerto SPI
-        self.spi.max_speed_hz = 1000000  #Establecemos la velocidad máxima
+        self.spi.open(module, disp)  # Abrimos el puerto SPI
+        self.spi.max_speed_hz = maxHz  #Establecemos la velocidad máxima
 
         self.prevRet = 10
         self.sended = self.prevRet
