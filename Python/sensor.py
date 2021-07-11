@@ -3,11 +3,6 @@ import RPi.GPIO as GPIO
 import time
 import configVariables as conf
 
-
-
-
-
-
 class distanceSensor:
 
     def __init__(self, trig = 16, echo = 18):

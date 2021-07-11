@@ -11,3 +11,5 @@ class FlightFactory:
             return flights.flightDistance(fp.getVal("instructions"), SPI)
         if type == "distanceLoop":
             return flights.flightDistanceLoop(fp.getVal("instructions"), SPI)
+        if type == "distanceSensor":
+            return flights.flightSensor(sensorList,fp.getVal("instructions"), SPI)

@@ -132,7 +132,7 @@ class flightSensor(flight):
             self.SPI.sendData(values)
             duration = self.dirProportionClacSleep(values[ROLL],values[PITCH],values[ACEL],distance)
             print("Distance",distance,"m","Sleep", duration,"s")
-            processDist = Process(target=self.checkDistance,args=(duration,[values],))
+            processDist = Process(target=self.checkDistance,args=(duration,values,))
             processWait = Process(target=self.wait,args=(duration,))
             processDist.start()
             processWait.start()
@@ -157,31 +157,50 @@ class flightSensor(flight):
             exit(0)
 
     def wait(self,dur):
+        print("wait",dur)
         time.sleep(dur)
-
 
     def checkDistance(self,duration,values):
         timeStart = time.time()
         cont = 0
+        print("checkDistance", duration,values)
+        print("sensors",self.sensors)
         while time.time()-timeStart < duration:
+            print("Tiempo restante", duration-(time.time()-timeStart))
             xAxysPower = abs(values[ROLL] - 50) / 50
             yAxysPower = abs(values[PITCH] - 50) / 50
+            #Comprobamos si nos movemos adelant o atras e izquierda o derecha
+            if (values[ROLL] - 50 > 0):
+                lr = "RIGHT"
+            else:
+                lr = "LEFT"
+
+            if (values[PITCH] - 50 > 0):
+                fb = "FRONT"
+            else:
+                fb = "BACK"
+
             closestX = max(CLOSEST_DIST*xAxysPower, 20)
             closesty = max(CLOSEST_DIST*yAxysPower, 20)
             order = ORDER
-            for sensor in self.sensors:
-                direction = order.pop()
-                dist = sensor.distanceInCM()
+            cont = 0
+            while cont < len(self.sensors):
+                sens = self.sensors[cont]
+                direction = order[cont]
+                cont += 1
+                dist = sens.distanceInCM()
+                print(direction,"Distance: %.2f cm" % dist)
                 if dist < 10:
+                    print("Detencion por accidente")
                     self.SPI.sendData(EMERGENCY_ALT_DESCENT)
-                if direction == "FRONT" or direction == "BACK":
-                    if dist < closestX:
-                        self.SPI.sendData([50,255])#Detiene el dron frontal, manteniendo el resto de movimiento
-                        cont += 1
-                if direction == "LEFT" or direction == "RIGHT":
-                    if dist < closesty:
-                        self.SPI.sendData([values[ROLL],50,255])#Detiene el dron lateral, manteniendo el resto de movimiento
-                        cont += 1
+                if fb == direction and dist < closestX:
+                    print("Detencion frontal")
+                    self .SPI.sendData([50,255])#Detiene el dron frontal, manteniendo el resto de movimiento
+                    cont += 1
+                if lr == direction and dist < closesty:
+                    print("Detencion lateral")
+                    self.SPI.sendData([values[ROLL],50,255])#Detiene el dron lateral, manteniendo el resto de movimiento
+                    cont += 1
                 if direction == "TOP" or direction == "BOTTOM":
                     if dist < 30:
                         self.SPI.sendData([EMERGENCY_DESCENT])#Apaga el dron por que un obstaculo esta demasiado cerca
@@ -189,10 +208,6 @@ class flightSensor(flight):
                     sys.exit()
             time.sleep(0.1)
 
-
-
-
-
     def __str__(self):
-        print("Vuelo bucle distancia:\n instrucciones:", self.instrutions, "\n Times:", self.times)
+        print("Vuelo bucle distancia con sensor:\n instrucciones:", self.instrutions)
 
