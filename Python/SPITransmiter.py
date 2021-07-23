@@ -1,7 +1,7 @@
 import RPi.GPIO as GPIO
 import spidev
 import time
-from configVariables import ENDVAL,ERROR_CODE,EMERGENCY_DESCENT,EMERGENCY_ALT_DESCENT
+from configVariables import ERROR_CODE,EMERGENCY_DESCENT
 
 class SPITransmiter:
     def __init__(self, module = 0, disp = 0, maxHz = 1000000):

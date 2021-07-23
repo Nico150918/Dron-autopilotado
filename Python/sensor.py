@@ -24,7 +24,6 @@ class distanceSensor:
         GPIO.output(self.TRIG, GPIO.LOW)
 
     def distanceInCM(self):
-
         try:
             self.initializeSensor()
             #cuando se inicializa el sensor pone el pulso echo en HIGH
@@ -40,11 +39,14 @@ class distanceSensor:
                     break
 
             duration = endTime - startTime
-            distancia = (conf.SOUND_SPEED * duration) / 2 #La distancia sera el tiempo que tarda el pulso * la velocidad entre 2 por que tenemos que medir la ida solo
-
+            # La distancia sera el tiempo que tarda el pulso * la velocidad entre 2
+            # por que tenemos que medir la ida solo
+            distancia = (conf.SOUND_SPEED * duration) / 2
             # Imprimimos resultado
         finally:
             return distancia
+
+
     def cleanUp(self):
         GPIO.cleanup()
 

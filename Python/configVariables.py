@@ -3,6 +3,7 @@ SOUND_SPEED = 34300 #la velocidad del sonido en cm/s se puede configurar para qu
 DEFAULT_DATA_VALUE = "50, 50, 50, 0, 0, 0, 0, 0"
 CLOSEST_DIST = 50 #como mucho a 50 cm frena
 ORDER = ["FRONT","LEFT","RIGHT","BACK"] #Orden de los sensores, si tienes mas sensores añadir a la lista
+TIPOS_DE_VUELO_IMPLEMENTADO = ["default","loop","distance","distanceLoop","distanceSensor"]#el identificador de cada tipo de vuelo
 
 #Las posiciones del array de la velocidad
 ROLL = 0
